@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  app:
+    build: ..
+    env_file:
+      - ../.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+      - cassandra
+    networks:
+      - urlnet
+
+  redis:
+    image: redis:7
+    restart: always
+    volumes:
+      - redis-data:/data
+    networks:
+      - urlnet
+
+  cassandra:
+    image: cassandra:4.1
+    restart: always
+    environment:
+      - CASSANDRA_CLUSTER_NAME=DevCluster
+      - CASSANDRA_DC=datacenter1
+    ports:
+      - "9042:9042"
+    networks:
+      - urlnet
+
+volumes:
+  redis-data:
+
+networks:
+  urlnet:
+    driver: bridge
