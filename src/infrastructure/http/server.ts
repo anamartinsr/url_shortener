@@ -19,7 +19,7 @@ export async function startServer() {
     console.log('Cassandra connected');
 
     const createTable = `
-      CREATE TABLE urls (
+      CREATE TABLE url (
         shortcode text PRIMARY KEY,
         long_url text,
         created_at timestamp
