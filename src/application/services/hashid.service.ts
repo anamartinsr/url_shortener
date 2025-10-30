@@ -14,6 +14,9 @@ export class HashidService {
 
   decode(hash: string): number | null {
     const res = this.hashids.decode(hash);
-    return res.length ? res[0] : null;
+    if (res.length) {
+      return Number(res[0]);
+    }
+    return null;
   }
 }

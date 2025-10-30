@@ -1,9 +1,8 @@
-version: "3.8"
 services:
-  app:
-    build: ..
+  url_shortener:
+    build: .
     env_file:
-      - ../.env
+      - .env
     ports:
       - "3000:3000"
     depends_on:
@@ -24,8 +23,11 @@ services:
     image: cassandra:4.1
     restart: always
     environment:
-      - CASSANDRA_CLUSTER_NAME=DevCluster
-      - CASSANDRA_DC=datacenter1
+      - CASSANDRA_CLUSTER_NAME=${CASSANDRA_CLUSTER_NAME}
+      - CASSANDRA_DC=${CASSANDRA_LOCAL_DATACENTER}
+      - CASSANDRA_AUTHENTICATOR=${CASSANDRA_AUTHENTICATOR}
+      - CASSANDRA_USER=${CASSANDRA_USER}
+      - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
     ports:
       - "9042:9042"
     networks:
