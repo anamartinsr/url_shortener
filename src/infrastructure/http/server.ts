@@ -13,13 +13,29 @@ import { CassandraUrlRepository } from '../database/cassandra/cassandra.reposito
 import { cassandraClient } from '../database/cassandra/cassandra.config';
 import { redisClient } from '../database/redis/redis.config';
 
+const app = express();
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+const urlRepo = new CassandraUrlRepository();
+const hashService = new HashidService();
+const createUseCase = new CreateShortUrlUseCase(urlRepo, hashService);
+const getUseCase = new GetOriginalUrlUseCase(urlRepo);
+const controller = new UrlController(createUseCase, getUseCase);
+
+app.use(urlRoutes(controller));
+app.use(errorMiddleware);
+
+export default app;
+
 export async function startServer() {
   try {
     await cassandraClient.connect();
     console.log('Cassandra connected');
 
     const createTable = `
-      CREATE TABLE url (
+      CREATE TABLE IF NOT EXISTS url (
         shortcode text PRIMARY KEY,
         long_url text,
         created_at timestamp
@@ -33,21 +49,6 @@ export async function startServer() {
 
   redisClient.on('error', (e) => console.error('Redis error', e));
   redisClient.on('connect', () => console.log('Redis connected'));
-
-  const app = express();
-  app.use(helmet());
-  app.use(cors());
-  app.use(express.json());
-
-  const urlRepo = new CassandraUrlRepository();
-  const hashService = new HashidService();
-  const createUseCase = new CreateShortUrlUseCase(urlRepo, hashService);
-  const getUseCase = new GetOriginalUrlUseCase(urlRepo);
-  const controller = new UrlController(createUseCase, getUseCase);
-
-  app.use(urlRoutes(controller));
-
-  app.use(errorMiddleware);
 
   app.listen(env.port, () => {
     console.log(`Server running on port ${env.port}`);
