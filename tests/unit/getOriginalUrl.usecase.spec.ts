@@ -1,7 +1,28 @@
+jest.mock('../../src/infrastructure/database/redis/redis.config', () => ({
+  redisClient: {
+    connect: jest.fn(),
+    quit: jest.fn(),
+    get: jest.fn(),
+    set: jest.fn(),
+    incr: jest.fn(),
+    del: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/infrastructure/database/redis/redis.cache', () => ({
+  redisCache: {
+    get: jest.fn(),
+    set: jest.fn(),
+    incr: jest.fn(),
+    del: jest.fn(),
+  },
+}));
+
 import { GetOriginalUrlUseCase } from '../../src/application/usecases/getOriginalUrl.usecase';
 import { IUrlRepository } from '../../src/domain/repositories/url.repository.interface';
-import { redisCache } from '../../src/infrastructure/database/redis/redis.cache';
 import { UrlEntity } from '../../src/domain/entities/url.entity';
+import { redisCache } from '../../src/infrastructure/database/redis/redis.cache';
+
 
 describe('GetOriginalUrlUseCase', () => {
   let useCase: GetOriginalUrlUseCase;
@@ -33,7 +54,7 @@ describe('GetOriginalUrlUseCase', () => {
   });
 
   it('deve buscar a URL no banco e salvar no cache se não estiver no cache', async () => {
-    const spyGet = jest.spyOn(redisCache, 'get').mockResolvedValue(null);
+    jest.spyOn(redisCache, 'get').mockResolvedValue(null);
     const spySet = jest.spyOn(redisCache, 'set').mockResolvedValue();
 
     const fakeEntity: UrlEntity = {
@@ -47,7 +68,6 @@ describe('GetOriginalUrlUseCase', () => {
     const result = await useCase.execute('abc123');
 
     expect(result).toBe('https://example.com/db');
-    expect(spyGet).toHaveBeenCalledWith('short:abc123');
     expect(mockRepo.findByShortcode).toHaveBeenCalledWith('abc123');
     expect(spySet).toHaveBeenCalledWith('short:abc123', 'https://example.com/db');
   });

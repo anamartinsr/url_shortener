@@ -4,11 +4,11 @@
   "description": "URL shortener - Node.js + TypeScript + Clean Architecture (Cassandra + Redis + Hashids)",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "dev": "ts-node-dev --respawn --transpile-only src/infrastructure/http/server.ts",
     "build": "tsc",
-    "start": "node dist/main.js",
+    "start": "node dist/infrastructure/http/server.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest "
   },
   "dependencies": {
     "cassandra-driver": "^4.6.4",
