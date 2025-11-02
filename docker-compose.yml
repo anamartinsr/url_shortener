@@ -1,6 +1,7 @@
 services:
-  url_shortener:
+  api:
     build: .
+    container_name: url_shortener
     env_file:
       - .env
     ports:
@@ -13,6 +14,7 @@ services:
 
   redis:
     image: redis:7
+    container_name: redis_cache
     restart: always
     volumes:
       - redis-data:/data
@@ -21,6 +23,7 @@ services:
 
   cassandra:
     image: cassandra:4.1
+    container_name: cassandra_db
     restart: always
     environment:
       - CASSANDRA_CLUSTER_NAME=${CASSANDRA_CLUSTER_NAME}
