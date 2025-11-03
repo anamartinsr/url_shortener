@@ -1,0 +1,164 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "URL Shortener API",
+    "version": "1.0.0",
+    "description": "API para encurtar URLs, redirecionar e verificar status da aplicação."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Health",
+      "description": "Verificação de status da aplicação"
+    },
+    {
+      "name": "Shorten",
+      "description": "Criação e redirecionamento de URLs encurtadas"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Verifica se o servidor está ativo",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Servidor ativo e funcional",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/shorten": {
+      "post": {
+        "summary": "Cria uma nova URL encurtada",
+        "tags": ["Shorten"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["long_url"],
+                "properties": {
+                  "long_url": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://example.com"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "URL encurtada criada com sucesso",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "shortcode": {
+                      "type": "string",
+                      "example": "abc123"
+                    },
+                    "short_url": {
+                      "type": "string",
+                      "example": "http://localhost:3000/abc123"
+                    },
+                    "long_url": {
+                      "type": "string",
+                      "example": "https://example.com"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "URL inválida ou formato incorreto"
+          },
+          "500": {
+            "description": "Erro interno do servidor"
+          }
+        }
+      }
+    },
+    "/{shortcode}": {
+      "get": {
+        "summary": "Redireciona para a URL original a partir do código encurtado",
+        "tags": ["Shorten"],
+        "parameters": [
+          {
+            "name": "shortcode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "example": "abc123"
+            },
+            "description": "Código encurtado da URL"
+          }
+        ],
+        "responses": {
+          "301": {
+            "description": "Redirecionamento para a URL original",
+            "headers": {
+              "Location": {
+                "description": "URL de destino",
+                "schema": {
+                  "type": "string",
+                  "example": "https://example.com"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Código não encontrado"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ShortenRequest": {
+        "type": "object",
+        "required": ["long_url"],
+        "properties": {
+          "long_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com"
+          }
+        }
+      },
+      "ShortenResponse": {
+        "type": "object",
+        "properties": {
+          "shortcode": { "type": "string", "example": "abc123" },
+          "short_url": { "type": "string", "example": "http://localhost:3000/abc123" },
+          "long_url": { "type": "string", "example": "https://example.com" }
+        }
+      }
+    }
+  }
+}
