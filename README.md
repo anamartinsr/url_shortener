@@ -1,4 +1,4 @@
-#  URL Shortener — Escalável e de Alta Performance
+#  URL Shortener 
 
 Gerador de URLs escalável, capaz de processar até **100 milhões de encurtamentos por dia**, desenvolvido com **Node.js**, **TypeScript**, **Redis**, **Cassandra** e **Docker**, aplicando princípios de **Clean Architecture** e **System Design**.
 
