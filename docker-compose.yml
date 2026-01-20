@@ -7,8 +7,10 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - redis
-      - cassandra
+      migrate:
+       condition: service_completed_successfully
+      redis:
+       condition: service_started
     networks:
       - urlnet
 
@@ -33,6 +35,22 @@ services:
       - CASSANDRA_PASSWORD=${CASSANDRA_PASSWORD}
     ports:
       - "9042:9042"
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh localhost 9042 -e 'DESCRIBE KEYSPACES'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - urlnet
+
+  migrate:
+    build: .
+    command: npm run migrate
+    env_file:
+      - .env
+    depends_on:
+      cassandra:
+        condition: service_healthy
     networks:
       - urlnet
 
