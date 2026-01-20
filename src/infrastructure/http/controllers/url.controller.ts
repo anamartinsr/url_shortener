@@ -1,6 +1,10 @@
-import { Request, Response } from 'express';
-import { CreateShortUrlUseCase } from '../../../application/usecases/createShortUrl.usecase';
-import { GetOriginalUrlUseCase } from '../../../application/usecases/getOriginalUrl.usecase';
+import { Request, Response } from "express";
+import Joi from "joi";
+
+import { CreateShortUrlUseCase } from "../../../application/usecases/createShortUrl.usecase";
+import { GetOriginalUrlUseCase } from "../../../application/usecases/getOriginalUrl.usecase";
+import { CreateUrlDTO } from "../../../interfaces/dto/create-url.dto";
+import { GetUrlDTO } from "../../../interfaces/dto/get-url.dto";
 
 export class UrlController {
   constructor(
@@ -8,27 +12,39 @@ export class UrlController {
     private getOriginalUrlUseCase: GetOriginalUrlUseCase
   ) {}
 
+  private createSchema = Joi.object<CreateUrlDTO>({
+    long_url: Joi.string().uri().required(),
+  });
+
   create = async (req: Request, res: Response) => {
-    const { long_url } = req.body;
-    const result = await this.createShortUrlUseCase.execute({ long_url });
-    const host = req.get('host');
+    const dto: CreateUrlDTO = req.body;
+    const { error } = this.createSchema.validate(dto);
+
+    if (error) {
+      return res.status(400).json({ message: "Invalid URL" });
+    }
+    const entity = await this.createShortUrlUseCase.execute(dto);
+    const host = req.get("host");
     const protocol = req.protocol;
     return res.status(201).json({
-      shortcode: result.shortcode,
-      short_url: `${protocol}://${host}/${result.shortcode}`
+      shortcode: entity.shortcode,
+      short_url: `${protocol}://${host}/${entity.shortcode}`,
     });
   };
 
   redirect = async (req: Request, res: Response) => {
-    const { shortcode } = req.params;
-    const longUrl = await this.getOriginalUrlUseCase.execute(shortcode);
+    const dto: GetUrlDTO = {
+      shortcode: req.params.shortcode,
+    };
+
+    const longUrl = await this.getOriginalUrlUseCase.execute(dto);
     if (!longUrl) {
-      return res.status(404).json({ message: 'Not found' });
+      return res.status(404).json({ message: "Not found" });
     }
     return res.redirect(302, longUrl);
   };
 
   health = async (_req: Request, res: Response) => {
-    return res.status(200).json({ status: 'ok' });
+    return res.status(200).json({ status: "ok" });
   };
 }
