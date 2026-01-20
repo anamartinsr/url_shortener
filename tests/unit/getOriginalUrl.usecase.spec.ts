@@ -45,7 +45,7 @@ describe('GetOriginalUrlUseCase', () => {
     const spyGet = jest.spyOn(redisCache, 'get').mockResolvedValue('https://example.com/from-cache');
     const spySet = jest.spyOn(redisCache, 'set').mockResolvedValue();
 
-    const result = await useCase.execute('abc123');
+    const result = await useCase.execute({ shortcode: 'abc123' });
 
     expect(result).toBe('https://example.com/from-cache');
     expect(spyGet).toHaveBeenCalledWith('short:abc123');
@@ -65,7 +65,7 @@ describe('GetOriginalUrlUseCase', () => {
 
     mockRepo.findByShortcode.mockResolvedValue(fakeEntity);
 
-    const result = await useCase.execute('abc123');
+    const result = await useCase.execute({ shortcode: 'abc123' });
 
     expect(result).toBe('https://example.com/db');
     expect(mockRepo.findByShortcode).toHaveBeenCalledWith('abc123');
@@ -76,7 +76,7 @@ describe('GetOriginalUrlUseCase', () => {
     jest.spyOn(redisCache, 'get').mockResolvedValue(null);
     mockRepo.findByShortcode.mockResolvedValue(null);
 
-    const result = await useCase.execute('naoExiste123');
+    const result = await useCase.execute({ shortcode: 'naoExiste123' });
 
     expect(result).toBeNull();
   });

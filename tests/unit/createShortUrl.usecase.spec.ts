@@ -5,7 +5,6 @@ jest.mock('../../src/infrastructure/database/redis/redis.config', () => ({
     get: jest.fn(),
     set: jest.fn(),
     incr: jest.fn(),
-    del: jest.fn(),
   },
 }));
 
@@ -14,7 +13,6 @@ jest.mock('../../src/infrastructure/database/redis/redis.cache', () => ({
     get: jest.fn(),
     set: jest.fn(),
     incr: jest.fn(),
-    del: jest.fn(),
   },
 }));
 
