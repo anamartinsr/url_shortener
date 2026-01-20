@@ -1,16 +1,17 @@
 import { redisClient } from './redis.config';
 import { env } from '../../config/env';
-
-export const redisCache = {
+import { IUrlCacheRepository } from '../../../domain/repositories/url.repository.interface';
+export class RedisUrlCacheRepository implements IUrlCacheRepository {
   async get(key: string): Promise<string | null> {
     return redisClient.get(key);
-  },
-
-  async set(key: string, value: string, ttlSeconds = env.cacheTTL): Promise<void> {
-    await redisClient.set(key, value, 'EX', ttlSeconds);
-  },
-
-  async incr(key: string): Promise<number> {
-    return redisClient.incr(key);
   }
-};
+
+  async save(key: string, value: string): Promise<void> {
+    await redisClient.set(key, value, 'EX', env.cacheTTL);
+  }
+
+  async incrementCounter(): Promise<number> {
+    return redisClient.incr(env.counterKey);
+  }
+}
+
