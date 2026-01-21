@@ -5,7 +5,7 @@ export interface IUrlRepository {
   findByShortcode(shortcode: string): Promise<UrlEntity | null>;
 }
 export interface IUrlCacheRepository {
-  save(key: string, value: string): Promise<void>;
+  save(key: string, value: string, ttlSeconds?: number): Promise<void>;
   get(key: string): Promise<string | null>;
   incrementCounter(): Promise<number>;
 }

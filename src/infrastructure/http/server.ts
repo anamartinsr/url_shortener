@@ -1,20 +1,21 @@
-import { app, redisClient, cassandraClient } from './app';
-import { env } from '../config/env';
+import { app, redisClient, cassandraClient } from "./app";
+import { env } from "../config/env";
+import { logger } from "../logger/logger";
 
 export async function startServer() {
   try {
     await cassandraClient.connect();
-    console.log('Cassandra connected');
+    logger.info("Cassandra connected");
   } catch (err) {
-    console.error('Cassandra connection failed', err);
+    logger.fatal({ err }, "Cassandra connection failed");
     process.exit(1);
   }
 
-  redisClient.on('error', console.error);
-  redisClient.on('connect', () => console.log('Redis connected'));
+  redisClient.on("error", (err) => logger.error({ err }, "Redis error"));
+  redisClient.on("connect", () => logger.info("Redis connected"));
 
   app.listen(env.port, () => {
-    console.log(`Server running on port ${env.port}`);
+    logger.info("Starting application");
   });
 }
 

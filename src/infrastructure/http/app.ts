@@ -14,9 +14,12 @@ import { CassandraUrlRepository } from '../database/cassandra/cassandra.reposito
 import { cassandraClient } from '../database/cassandra/cassandra.config';
 import { redisClient } from '../database/redis/redis.config';
 import { RedisUrlCacheRepository  } from './../../infrastructure/database/redis/redis.cache';
-
+import { httpLogger } from '../logger/http-logger';
+import { rateLimiter } from './middlewares/rate-limit.middleware';
 
 const app = express();
+
+app.use(httpLogger);
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
@@ -26,9 +29,9 @@ const hashService = new HashidService();
 const cacheRepo = new RedisUrlCacheRepository();
 const createUseCase = new CreateShortUrlUseCase(urlRepo, hashService, cacheRepo);
 const getUseCase = new GetOriginalUrlUseCase(urlRepo, cacheRepo);
-
 const controller = new UrlController(createUseCase, getUseCase);
 
+app.use(rateLimiter);
 app.use('/api/docs', docsRouter);
 app.use(urlRoutes(controller));
 app.use(errorMiddleware);
