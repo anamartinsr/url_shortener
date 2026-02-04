@@ -5,6 +5,7 @@ import { logger } from "../../logger/logger";
 export class RedisUrlCacheRepository implements IUrlCacheRepository {
   async get(key: string): Promise<string | null> {
     try {
+      if (!redisClient) return null;
       return redisClient.get(key);
     } catch (err) {
       logger.error({ err, key }, "Redis GET failed");
@@ -15,6 +16,7 @@ export class RedisUrlCacheRepository implements IUrlCacheRepository {
   async save(key: string, value: string, ttlSeconds?: number): Promise<void> {
     try {
       const ttl = ttlSeconds ?? env.cacheTTL;
+      if (!redisClient) return;
       await redisClient.set(key, value, "EX", ttl);
     } catch (err) {
       logger.error({ err, key }, "Redis SET failed");
@@ -24,6 +26,7 @@ export class RedisUrlCacheRepository implements IUrlCacheRepository {
 
   async incrementCounter(): Promise<number> {
     try {
+      if (!redisClient) return 0;
       return redisClient.incr(env.counterKey);
     } catch (err) {
       logger.error({ err, key: env.counterKey }, "Redis INCR failed");

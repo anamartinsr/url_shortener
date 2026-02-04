@@ -1,83 +1,64 @@
-jest.mock('../../src/infrastructure/database/redis/redis.config', () => ({
-  redisClient: {
-    connect: jest.fn(),
-    quit: jest.fn(),
-    get: jest.fn(),
-    set: jest.fn(),
-    incr: jest.fn(),
-    del: jest.fn(),
-  },
-}));
-
-jest.mock('../../src/infrastructure/database/redis/redis.cache', () => ({
-  redisCache: {
-    get: jest.fn(),
-    set: jest.fn(),
-    incr: jest.fn(),
-    del: jest.fn(),
-  },
-}));
-
 import { GetOriginalUrlUseCase } from '../../src/application/usecases/getOriginalUrl.usecase';
-import { IUrlRepository } from '../../src/domain/repositories/url.repository.interface';
-import { UrlEntity } from '../../src/domain/entities/url.entity';
-import { redisCache } from '../../src/infrastructure/database/redis/redis.cache';
-
+import { IUrlRepository, IUrlCacheRepository } from '../../src/domain/repositories/url.repository.interface';
 
 describe('GetOriginalUrlUseCase', () => {
-  let useCase: GetOriginalUrlUseCase;
-  let mockRepo: jest.Mocked<IUrlRepository>;
+  const urlRepo: jest.Mocked<IUrlRepository> = {
+    findByShortcode: jest.fn(),
+    save: jest.fn(),
+  };
 
-  beforeEach(() => {
-    mockRepo = {
-      findByShortcode: jest.fn(),
-      save: jest.fn(),
-    } as unknown as jest.Mocked<IUrlRepository>;
+  const cacheRepo: jest.Mocked<IUrlCacheRepository> = {
+    get: jest.fn(),
+    save: jest.fn(),
+    incrementCounter: jest.fn(),
+  };
 
-    useCase = new GetOriginalUrlUseCase(mockRepo);
-  });
+  const useCase = new GetOriginalUrlUseCase(
+    urlRepo,
+    cacheRepo
+  );
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
-  it('deve retornar a URL original do cache', async () => {
-    const spyGet = jest.spyOn(redisCache, 'get').mockResolvedValue('https://example.com/from-cache');
-    const spySet = jest.spyOn(redisCache, 'set').mockResolvedValue();
+  it('deve retornar a URL diretamente do cache', async () => {
+    cacheRepo.get.mockResolvedValue('https://cached.com');
 
-    const result = await useCase.execute({ shortcode: 'abc123' });
+    const result = await useCase.execute({ shortcode: 'abc' });
 
-    expect(result).toBe('https://example.com/from-cache');
-    expect(spyGet).toHaveBeenCalledWith('short:abc123');
-    expect(mockRepo.findByShortcode).not.toHaveBeenCalled();
-    expect(spySet).not.toHaveBeenCalled();
+    expect(result).toBe('https://cached.com');
+    expect(urlRepo.findByShortcode).not.toHaveBeenCalled();
   });
 
-  it('deve buscar a URL no banco e salvar no cache se não estiver no cache', async () => {
-    jest.spyOn(redisCache, 'get').mockResolvedValue(null);
-    const spySet = jest.spyOn(redisCache, 'set').mockResolvedValue();
-
-    const fakeEntity: UrlEntity = {
-      shortcode: 'abc123',
-      long_url: 'https://example.com/db',
+  it('deve buscar no banco e salvar no cache em cache miss', async () => {
+    cacheRepo.get.mockResolvedValue(null);
+    urlRepo.findByShortcode.mockResolvedValue({
+      shortcode: 'abc',
+      long_url: 'https://db.com',
       created_at: new Date(),
-    };
+    });
 
-    mockRepo.findByShortcode.mockResolvedValue(fakeEntity);
+    const result = await useCase.execute({ shortcode: 'abc' });
 
-    const result = await useCase.execute({ shortcode: 'abc123' });
-
-    expect(result).toBe('https://example.com/db');
-    expect(mockRepo.findByShortcode).toHaveBeenCalledWith('abc123');
-    expect(spySet).toHaveBeenCalledWith('short:abc123', 'https://example.com/db');
+    expect(result).toBe('https://db.com');
+    expect(cacheRepo.save).toHaveBeenCalledWith(
+      'short:abc',
+      'https://db.com'
+    );
   });
 
-  it('deve retornar null se o shortcode não existir no banco', async () => {
-    jest.spyOn(redisCache, 'get').mockResolvedValue(null);
-    mockRepo.findByShortcode.mockResolvedValue(null);
+  it('deve retornar null quando não encontrar a URL', async () => {
+    cacheRepo.get.mockResolvedValue(null);
+    urlRepo.findByShortcode.mockResolvedValue(null);
 
-    const result = await useCase.execute({ shortcode: 'naoExiste123' });
+    const result = await useCase.execute({ shortcode: 'naoExiste' });
 
     expect(result).toBeNull();
+    expect(cacheRepo.save).toHaveBeenCalledWith(
+      'short:naoExiste',
+      '__NULL__',
+      60
+    );
   });
 });
