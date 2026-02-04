@@ -1,31 +1,23 @@
 #  URL Shortener 
 
-Gerador de URLs escalável, capaz de processar até **100 milhões de encurtamentos por dia**, desenvolvido com **Node.js**, **TypeScript**, **Redis**, **Cassandra** e **Docker**, aplicando princípios de **Clean Architecture** e **System Design**.
+
+API de encurtamento de URLs projetada com foco em alta taxa de leitura, baixa latência e arquitetura limpa, utilizando Node.js, TypeScript, Redis, Docker e Cassandra.
+O projeto aplica princípios de Clean Architecture, separação de responsabilidades e conceitos de System Design voltados a sistemas distribuídos.
 
 ---
 
 ##  Tecnologias Utilizadas
 
-* **Node.js** + **TypeScript** — backend performático e tipado
-* **Cassandra** — banco de dados distribuído e escalável
-* **Redis** — cache para otimizar leituras e redirecionamentos
-* **Docker** — containerização e fácil deploy
-* **Joi** — validação de dados
-* **Helmet** e **Cors** — segurança e controle de acesso
-* **Hashids** — ofuscação e geração segura dos shortcodes
-* **Jest** — testes automatizados
-
----
-
-##  Arquitetura
-
-O projeto segue os princípios de **Clean Architecture**, garantindo separação clara entre camadas:
-
-* `application/` — casos de uso e serviços de negócio
-* `domain/` — entidades e interfaces de repositório
-* `infrastructure/` — banco de dados, cache e configurações
-* `interfaces/` — DTOs e mapeadores de dados
-* `http/` — rotas, controladores e middlewares
+* **Node.js** + **TypeScript**: API performática e tipada
+* **Express**: camada HTTP simples e desacoplad
+* **Cassandra**:  banco distribuído otimizado para leitura e alta disponibilidade
+* **Redis**: cache de leitura, cache negativo e contador distribuído
+* **Docker**: containerização e fácil deploy
+* **Joi**: validação de dados
+* **Pino**: logging estruturado e performático
+* **Helmet** e **Cors**: segurança e controle de acesso
+* **Hashids**: geração de shortcodes curtos e compatíveis com URL
+* **Jest**: testes automatizados
 
 ---
 
@@ -53,6 +45,14 @@ O projeto segue os princípios de **Clean Architecture**, garantindo separação
 
 ---
 
+## Objetivo do Projeto
+Este projeto foi desenvolvido com foco educacional e arquitetural, simulando requisitos de escala real como:
+* alto volume de requisições
+* predominância de leitura sobre escrita
+* persistência de longo prazo
+* cache agressivo
+* tolerância a falhas
+
 ## Modelagem do Cassandra
 
 A modelagem segue o princípio de que o `shortcode` é único e deve ser a **chave primária**, garantindo eficiência nas buscas:
@@ -69,13 +69,107 @@ A geração do `shortcode` usa **Base62** combinada com **Hashids** para garanti
 
 ---
 
-##  Execução com Docker
+## Segurança
 
-```bash
-docker-compose up --build
+* **Helmet**: protege a aplicação com cabeçalhos HTTP.
+* **Cors**: controle de origem cruzada.
+* **Rate limit** para proteção contra abuso.
+* **Hashids**: impede previsibilidade dos códigos gerados.
+
+
+---
+
+## Escalabilidade
+Este projeto simula decisões comuns em sistemas de grande escala, como:
+* Separação entre leitura e escrita
+* Uso agressivo de cache
+* Banco distribuído orientado a leitura
+* API stateless, pronta para replicação horizontal
+
+---
+
+## Observabilidade
+* Logs estruturados com Pino
+* Log HTTP automático
+* Erros centralizados via middleware
+
+---
+
+## Endpoints
+
+* Encurtar URL
+
+```
+http
+
+POST /api/shorten
 ```
 
-O serviço ficará disponível em `http://localhost:3000`.
+
+```
+body json
+
+{
+  "long_url": "https://example.com"
+}
+```
+
+
+```
+response
+{
+  "shortcode": "Ab3X9",
+  "short_url": "http://localhost:3000/Ab3X9"
+}
+```
+
+* Redirecionar - redireciona para a URL original
+
+```
+http
+
+GET /:shortcode
+```
+
+* Health Check
+```
+http
+GET /health
+```
+
+
+##  Execução do Projeto
+
+### Pré-requisitos
+Antes de executar a aplicação, certifique-se de ter os seguintes itens instalados na sua máquina:
+* Node.js (versão LTS recomendada)
+* Docker
+* Docker Compose
+* Git
+
+### Passo a passo
+
+* Clone o repositório
+
+```
+git clone https://github.com/anamartinsr/url_shortener.git
+```
+
+* Acesse a pasta do projeto
+```
+cd url_shortener
+```
+* Configure as variáveis de ambiente
+* Crie um arquivo .env na raiz do projeto com as variáveis necessárias (exemplo disponível em .env.example).
+* Suba a aplicação com Docker
+```
+docker-compose up --build
+```
+### Acesso à aplicação
+Após a inicialização, a API estará disponível em:
+```
+http://localhost:3000
+```
 
 ---
 
@@ -87,37 +181,21 @@ Execute os testes com:
 npm run test
 ```
 
-Os testes são implementados com **Jest**, cobrindo casos de uso, serviços e repositórios.
+Os testes são implementados com **Jest** e **Supertest**.
 
 ---
 
-##  Estrutura de Pastas
+## Contribuições
+Contribuições são bem-vindas.
+Sinta-se à vontade para abrir issues, enviar pull requests ou sugerir melhorias arquiteturais.
 
-```
-src/
- ├── application/
- ├── domain/
- ├── infrastructure/
- │    ├── database/
- │    │    ├── cassandra/
- │    │    └── redis/
- ├── interfaces/
- └── main.ts
-```
+### Se for contribuir:
+* mantenha a separação de camadas proposta pela arquitetura
+* evite acoplamento entre domínio e infraestrutura
+* priorize legibilidade, simplicidade e decisões bem justificadas
 
----
+## Forks e Uso do Projeto
+Você pode forkar, estudar, adaptar e evoluir este projeto livremente.
+O objetivo principal é servir como referência prática de arquitetura, system design e boas práticas em APIs backend.
 
-## Segurança
-
-* **Helmet**: protege a aplicação com cabeçalhos HTTP.
-* **Cors**: controle de origem cruzada.
-* **Hashids**: impede previsibilidade dos códigos gerados.
-
----
-
-## Escalabilidade
-
-O sistema foi desenhado com foco em **leitura massiva (10:1)**, cache eficiente com Redis, persistência distribuída via Cassandra e uso de containers para suportar alta carga e replicação horizontal.
-
----
 
